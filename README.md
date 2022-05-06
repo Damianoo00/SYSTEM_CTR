@@ -3,4 +3,5 @@
 
 DC-SC-PV system controller on Arduino
 
-*work
+## Scheme
+![SYSTEM_CTR scheme](https://github.com/Damianoo00/Drive-DC-AC-SC/blob/ALL/schemes/SYSTEM_CTR_SH.png?raw=true)
