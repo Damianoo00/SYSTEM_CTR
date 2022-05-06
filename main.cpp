@@ -6,6 +6,11 @@
 #include "../include/converters.h"
 #include <Arduino.h>
 
+/*** SWITCHES
+LOG - log values
+SET_VALUES - get speed and current from UART
+WORK - get speed and current from sensors
+*/
 #define LOG
 #define WORK
 
@@ -47,6 +52,11 @@ constexpr int speed_ref = 300;    // rad/s
 constexpr int curr_ref = 105;     // A
 constexpr int voltage_ref = 5000; // mV
 
+/*** Initial sensors val ***/
+static int curr_sensor = 0;
+static int speed_sensor = 0;
+static int pv_voltage = 0;
+
 void setup()
 {
   uart_begin(BAUD, TIMEOUT);
@@ -62,9 +72,16 @@ void setup()
 
 void loop()
 {
-  static int curr_sensor = 0;
-  static int speed_sensor = 0;
-  static int pv_voltage = 0;
+
+#ifdef LOG
+  /************************** Set header and params to log **********************************/
+  const String header = "time,pv_voltage,speed_ref,speed_sensor,curr_sensor,ctr_sig";
+  const long log_parametrs[] = {millis(), pv_voltage, speed_ref, speed_sensor, curr_sensor, PIctrl_curr.y};
+  /********************************************************************************************/
+
+  const int NumOfParams = sizeof(log_parametrs) / sizeof(log_parametrs[0]);
+  log_uart(header, log_parametrs, NumOfParams);
+#endif
 
 #ifdef WORK
   curr_sensor = read_current(CURR_PORT, 1);
@@ -72,17 +89,13 @@ void loop()
   pv_voltage = get_voltage(VOLT_SENSOR);
 #endif
 
-#ifdef SET_CURR
-  curr_sensor = uart_recive();
+#ifdef SET_VALUE
+  uart_recive_2_params(&curr_sensor, &speed_sensor);
 #endif
   CalcPIctrl(&PIctrl_speed, speed_ref - speed_sensor);
-  CalcPIctrl(&PIctrl_curr, PIctrl_speed.y - speed_sensor);
+  CalcPIctrl(&PIctrl_curr, PIctrl_speed.y - curr_sensor);
 
   PWM_write(PWM_SC, get_Cuk_duty(voltage_ref - pv_voltage, SC_voltage));
   PWM_write(PWM1_DC, PIctrl_curr.y);
   PWM_write(PWM2_DC, -PIctrl_curr.y);
-
-#ifdef LOG
-  log_uart(millis(), pv_voltage, speed_ref, speed_sensor, curr_ref, curr_sensor, PIctrl_curr.y);
-#endif
 }
