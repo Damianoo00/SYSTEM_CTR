@@ -1,3 +1,13 @@
+/**
+ * @file main.cpp
+ * @author Damian Płaskowicki (damian.plaskowicki.stud@pw.edu.pl)
+ * @brief DC Drive System with Speed and Current controller and supply from PV simulator with SuperCapacitor energy magazine
+ * @version 0.1
+ * @date 2022-05-31
+ *
+ * @copyright Copyright (c) 2022
+ *
+ */
 #include "../include/Control.h"
 #include "../include/PWM.h"
 #include "../include/sensors.h"
@@ -6,12 +16,18 @@
 #include "../include/converters.h"
 #include <Arduino.h>
 
+/**
+ * @brief define or remove correct line to switch any mode {#define [param]}
+ * @param LOG define to enable logging
+ * @param SET_VALUES define to enable getting current and speed values from uart
+ * @param WORK define to enable getting current and speed values from sensors
+ */
 /*** SWITCHES
 LOG - log values
 SET_VALUES - get speed and current from UART
 WORK - get speed and current from sensors
 */
-#define LOG
+
 #define WORK
 
 /***** POUT *****/
@@ -84,9 +100,9 @@ void loop()
 #endif
 
 #ifdef WORK
-  curr_sensor = read_current(CURR_PORT, 1);
+  curr_sensor = GetCurrent(CURR_PORT, 1);
   speed_sensor = i2c_get_value_from_slave(ENCODER_ID, 4);
-  pv_voltage = get_voltage(VOLT_SENSOR);
+  pv_voltage = CalcVoltage(VOLT_SENSOR);
 #endif
 
 #ifdef SET_VALUE
@@ -95,7 +111,7 @@ void loop()
   CalcPIctrl(&PIctrl_speed, speed_ref - speed_sensor);
   CalcPIctrl(&PIctrl_curr, PIctrl_speed.y - curr_sensor);
 
-  PWM_write(PWM_SC, get_Cuk_duty(voltage_ref - pv_voltage, SC_voltage));
+  PWM_write(PWM_SC, GetCukDuty(voltage_ref - pv_voltage, SC_voltage));
   PWM_write(PWM1_DC, PIctrl_curr.y);
   PWM_write(PWM2_DC, -PIctrl_curr.y);
 }
