@@ -78,9 +78,7 @@ void setup()
   uart_begin(BAUD, TIMEOUT);
   i2c_begin_master();
 
-  PWM_begin(PWM1_DC);
-  PWM_begin(PWM2_DC);
-  PWM_begin(PWM_SC);
+  PWM_begin();
 
   InitPIctrl(&PIctrl_speed, Ts, Kr_v, Tr_v, max_v, min_v);
   InitPIctrl(&PIctrl_curr, Ts, Kr_i, Tr_i, max_i, min_i);
@@ -111,7 +109,7 @@ void loop()
   CalcPIctrl(&PIctrl_speed, speed_ref - speed_sensor);
   CalcPIctrl(&PIctrl_curr, PIctrl_speed.y - curr_sensor);
 
-  PWM_write(PWM_SC, GetCukDuty(voltage_ref - pv_voltage, SC_voltage));
-  PWM_write(PWM1_DC, PIctrl_curr.y);
-  PWM_write(PWM2_DC, -PIctrl_curr.y);
+  analogWrite(PWM_SC, GetCukDuty(voltage_ref - pv_voltage, SC_voltage));
+  constexpr int ToDuty = 100;
+  PWM_write((int)(PIctrl_curr.y * ToDuty));
 }
